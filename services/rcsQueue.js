@@ -3,7 +3,7 @@ const activeRcsRooms = new Set();
 export function trackRcsEvent(eventKind, roomId) {
   if (!roomId) return;
 
-  if (eventKind === 'guest_message') {
+  if (eventKind === 'session_created' || eventKind === 'guest_message') {
     activeRcsRooms.add(roomId);
   }
 
