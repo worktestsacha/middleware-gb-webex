@@ -19,10 +19,10 @@ class RcsQueueWidget extends HTMLElement {
     }
   }
 
-  render(count) {
+render(count) {
     this.innerHTML = `
       <div style="
-        background: linear-gradient(135deg, #4FA8F0 0%, #2E7BD6 100%);        
+        background: linear-gradient(135deg, #6FB8F2 0%, #4A9FE8 100%);
         color:white;
         padding:4px 12px 4px 6px;
         border-radius:14px;
