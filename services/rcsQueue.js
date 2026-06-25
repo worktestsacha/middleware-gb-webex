@@ -23,11 +23,14 @@ const activeRcsRooms = loadFromDisk();
 export function trackRcsEvent(eventKind, roomId) {
   if (!roomId) return;
 
-  if (eventKind === 'session_created' || eventKind === 'guest_message') {
+  const enAttente = ['session_created', 'session_waiting', 'session_late', 'guest_message'];
+  const priseEnCharge = ['session_running', 'agent_message', 'session_closed'];
+
+  if (enAttente.includes(eventKind)) {
     activeRcsRooms.add(roomId);
   }
 
-  if (eventKind === 'agent_message' || eventKind === 'session_closed') {
+  if (priseEnCharge.includes(eventKind)) {
     activeRcsRooms.delete(roomId);
   }
 
