@@ -20,20 +20,22 @@ class RcsQueueWidget extends HTMLElement {
   }
 
   render(count) {
-    const bgColor = count > 0 ? '#e53935' : '#43a047';
     this.innerHTML = `
       <div style="
-        background:${bgColor};
+        background: linear-gradient(135deg, #2E8FE8 0%, #1565C0 100%);
         color:white;
-        padding:2px 10px;
-        border-radius:12px;
+        padding:4px 12px 4px 6px;
+        border-radius:14px;
         font-size:12px;
         font-weight:600;
         display:flex;
         align-items:center;
-        gap:4px;
+        gap:6px;
       ">
-        RCS&nbsp;${count}
+        <img src="https://www.brandcolorcode.com/media/google-business-messaging-logo.png"
+             alt=""
+             style="width:18px;height:18px;border-radius:50%;display:block;" />
+        <span>${count}</span>
       </div>
     `;
   }
