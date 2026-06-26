@@ -111,3 +111,10 @@ webhookRouter.post('/discussion-event', async (req, res) => {
     trackRcsEvent(data.kind, data.room_id);
   }
 });
+
+webhookRouter.post('/wxcc-tasks', async (req, res) => {
+  console.log('======= WXCC TASK EVENT REÇU =======');
+  console.log(JSON.stringify(req.body, null, 2));
+
+  res.json({ received: true });
+});
