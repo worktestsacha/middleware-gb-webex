@@ -3,6 +3,8 @@ import { loginB, getTokenB } from '../services/authB.js';
 import { pauseAgentB } from '../services/pauseB.js';
 import { agentsMap } from '../config/agents.js';
 import { trackRcsEvent } from '../services/rcsQueue.js';
+import { createWxccTaskFromRcs, extractRoomIdFromOrigin } from '../services/wxccTasks.js';
+import { linkTaskToRoom } from '../services/taskRoomMap.js';
 
 
 export const webhookRouter = Router();
@@ -109,6 +111,15 @@ webhookRouter.post('/discussion-event', async (req, res) => {
 
   if (data?.channel === 'rcs') {
     trackRcsEvent(data.kind, data.room_id);
+
+    if (data.kind === 'guest_message') {
+      const messageText = Array.isArray(data.content) ? data.content[0] : data.content;
+      try {
+        await createWxccTaskFromRcs(data.room_id, messageText);
+      } catch (err) {
+        console.error('Erreur création tâche WxCC :', err.message);
+      }
+    }
   }
 });
 
@@ -117,4 +128,13 @@ webhookRouter.post('/wxcc-tasks', async (req, res) => {
   console.log(JSON.stringify(req.body, null, 2));
 
   res.json({ received: true });
+
+  const { type, data } = req.body;
+
+  if (type === 'task:new') {
+    const roomId = extractRoomIdFromOrigin(data.origin);
+    if (roomId) {
+      linkTaskToRoom(data.taskId, roomId);
+    }
+  }
 });
