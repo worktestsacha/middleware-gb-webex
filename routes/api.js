@@ -2,6 +2,7 @@
 
 
 import { Router } from 'express';
+import { getRoomForTask } from '../services/taskRoomMap.js';
 import { getRcsQueueCount } from '../services/rcsQueue.js';
 
 export const apiRouter = Router();
@@ -98,4 +99,14 @@ apiRouter.post('/pause', async (req, res, next) => {
 
 apiRouter.get('/rcs-queue-count', (req, res) => {
   res.json({ count: getRcsQueueCount() });
+});
+
+apiRouter.get('/room-for-task/:taskId', (req, res) => {
+  const roomId = getRoomForTask(req.params.taskId);
+
+  if (!roomId) {
+    return res.status(404).json({ error: 'Aucune conversation trouvée pour ce taskId' });
+  }
+
+  res.json({ roomId });
 });
