@@ -101,6 +101,8 @@ webhookRouter.post('/agent-state', async (req, res) => {
   }
 });
 
+const seenEventIds = new Set();
+
 webhookRouter.post('/discussion-event', async (req, res) => {
   console.log('======= DISCUSSION EVENT REÇU =======');
   console.log(JSON.stringify(req.body, null, 2));
@@ -113,6 +115,14 @@ webhookRouter.post('/discussion-event', async (req, res) => {
     trackRcsEvent(data.kind, data.room_id);
 
     if (data.kind === 'guest_message') {
+      const eventId = data.event_id;
+
+      if (seenEventIds.has(eventId)) {
+        console.log(`Event ${eventId} déjà traité, on ignore (doublon)`);
+        return;
+      }
+      seenEventIds.add(eventId);
+
       const messageText = Array.isArray(data.content) ? data.content[0] : data.content;
       try {
         await createWxccTaskFromRcs(data.room_id, messageText);
@@ -122,7 +132,6 @@ webhookRouter.post('/discussion-event', async (req, res) => {
     }
   }
 });
-
 webhookRouter.post('/wxcc-tasks', async (req, res) => {
   console.log('======= WXCC TASK EVENT REÇU =======');
   console.log(JSON.stringify(req.body, null, 2));
