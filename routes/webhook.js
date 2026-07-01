@@ -1,51 +1,15 @@
 import { Router } from 'express';
-import { loginB, getTokenB } from '../services/authB.js';
+import { loginB } from '../services/authB.js';
 import { pauseAgentB } from '../services/pauseB.js';
 import { agentsMap } from '../config/agents.js';
 import { trackRcsEvent } from '../services/rcsQueue.js';
-import { createWxccTaskFromRcs, extractRoomIdFromOrigin } from '../services/wxccTasks.js';
-import { linkTaskToRoom } from '../services/taskRoomMap.js';
 import { createWxccTaskFromRcs, appendMessageToWxccTask, extractRoomIdFromOrigin } from '../services/wxccTasks.js';
 import { linkTaskToRoom, getTaskForRoom } from '../services/taskRoomMap.js';
 
-
-
 export const webhookRouter = Router();
 
-webhookRouter.post('/agent-login', async (req, res) => {
+const seenEventIds = new Set();
 
-  const { type, data } = req.body;
-
-   console.log('======= WEBHOOK REÇU =======');
-  console.log('Body reçu :', JSON.stringify(req.body, null, 2));
-  console.log('Webhook reçu :', JSON.stringify(req.body, null, 2));
-
-  if (type !== 'agent:login') {
-    return res.status(200).json({ received: true, ignored: true });
-  }
-
-  const agentId = data?.agentId;
-
-  if (!agentId) {
-    return res.status(400).json({ error: 'agentId manquant' });
-  }
-
-  console.log(`Webhook agent:login reçu pour l'agent ${agentId}`);
-
-  res.json({ received: true });
-
-  try {
-    await loginB(agentId);
-    console.log(`Login B réussi pour l'agent ${agentId}`);
-  } catch (err) {
-    console.error(`Erreur login B :`, err.message);
-    console.error(`Détail :`, err.cause); 
-  }
-});
-
-
-
-// Login automatique
 webhookRouter.post('/agent-login', async (req, res) => {
   const { type, data } = req.body;
   console.log('======= WEBHOOK REÇU =======');
@@ -71,10 +35,8 @@ webhookRouter.post('/agent-login', async (req, res) => {
   }
 });
 
-// Changement de statut → pause
 webhookRouter.post('/agent-state', async (req, res) => {
   const { type, data } = req.body;
-
   console.log('======= STATE CHANGE REÇU =======');
   console.log('Body reçu :', JSON.stringify(req.body, null, 2));
 
@@ -83,15 +45,12 @@ webhookRouter.post('/agent-state', async (req, res) => {
   }
 
   const { agentId, currentState, idleCodeId } = data;
-
   if (!agentId) {
     return res.status(400).json({ error: 'agentId manquant' });
   }
 
-  // On répond immédiatement à Webex
   res.json({ received: true });
 
-  // On traite uniquement idle et available
   if (currentState !== 'idle' && currentState !== 'available') {
     console.log(`État ignoré : ${currentState}`);
     return;
@@ -103,8 +62,6 @@ webhookRouter.post('/agent-state', async (req, res) => {
     console.error(`Erreur pause B :`, err.message);
   }
 });
-
-const seenEventIds = new Set();
 
 webhookRouter.post('/discussion-event', async (req, res) => {
   console.log('======= DISCUSSION EVENT REÇU =======');
@@ -143,6 +100,7 @@ webhookRouter.post('/discussion-event', async (req, res) => {
     }
   }
 });
+
 webhookRouter.post('/wxcc-tasks', async (req, res) => {
   console.log('======= WXCC TASK EVENT REÇU =======');
   console.log(JSON.stringify(req.body, null, 2));
