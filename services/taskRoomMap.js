@@ -20,9 +20,17 @@ function saveToDisk(map) {
 
 const taskToRoom = loadFromDisk();
 
+// Map inverse : roomId -> taskId
+const roomToTask = new Map();
+// Reconstruction de la map inverse au démarrage
+for (const [taskId, roomId] of taskToRoom.entries()) {
+  roomToTask.set(roomId, taskId);
+}
+
 export function linkTaskToRoom(taskId, roomId) {
   if (!taskId || !roomId) return;
   taskToRoom.set(taskId, roomId);
+  roomToTask.set(roomId, taskId);
   saveToDisk(taskToRoom);
   console.log(`Lien créé : taskId ${taskId} -> room_id ${roomId}`);
 }
@@ -31,7 +39,13 @@ export function getRoomForTask(taskId) {
   return taskToRoom.get(taskId) || null;
 }
 
+export function getTaskForRoom(roomId) {
+  return roomToTask.get(roomId) || null;
+}
+
 export function unlinkTask(taskId) {
+  const roomId = taskToRoom.get(taskId);
+  if (roomId) roomToTask.delete(roomId);
   taskToRoom.delete(taskId);
   saveToDisk(taskToRoom);
 }

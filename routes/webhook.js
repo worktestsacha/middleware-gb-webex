@@ -5,6 +5,9 @@ import { agentsMap } from '../config/agents.js';
 import { trackRcsEvent } from '../services/rcsQueue.js';
 import { createWxccTaskFromRcs, extractRoomIdFromOrigin } from '../services/wxccTasks.js';
 import { linkTaskToRoom } from '../services/taskRoomMap.js';
+import { createWxccTaskFromRcs, appendMessageToWxccTask, extractRoomIdFromOrigin } from '../services/wxccTasks.js';
+import { linkTaskToRoom, getTaskForRoom } from '../services/taskRoomMap.js';
+
 
 
 export const webhookRouter = Router();
@@ -124,10 +127,18 @@ webhookRouter.post('/discussion-event', async (req, res) => {
       seenEventIds.add(eventId);
 
       const messageText = Array.isArray(data.content) ? data.content[0] : data.content;
+      const existingTaskId = getTaskForRoom(data.room_id);
+
       try {
-        await createWxccTaskFromRcs(data.room_id, messageText);
+        if (existingTaskId) {
+          console.log(`Tâche existante pour room ${data.room_id} : ${existingTaskId} → append message`);
+          await appendMessageToWxccTask(existingTaskId, messageText);
+        } else {
+          console.log(`Pas de tâche pour room ${data.room_id} → Create Task`);
+          await createWxccTaskFromRcs(data.room_id, messageText);
+        }
       } catch (err) {
-        console.error('Erreur création tâche WxCC :', err.message);
+        console.error('Erreur envoi message WxCC :', err.message);
       }
     }
   }

@@ -13,9 +13,14 @@ function fetchWithProxy(url, options) {
   return fetch(url, options);
 }
 
-export async function createWxccTaskFromRcs(roomId, messageText) {
-  const accessToken = process.env.WXCC_ACCESS_TOKEN;
+function getHeaders() {
+  return {
+    'Authorization': `Bearer ${process.env.WXCC_ACCESS_TOKEN}`,
+    'Content-Type': 'application/json'
+  };
+}
 
+export async function createWxccTaskFromRcs(roomId, messageText) {
   const body = {
     origin: {
       id: `${ORIGIN_PREFIX}${roomId}@greenbureau.fr`,
@@ -41,10 +46,7 @@ export async function createWxccTaskFromRcs(roomId, messageText) {
 
   const response = await fetchWithProxy('https://api.wxcc-eu2.cisco.com/v2/tasks', {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json'
-    },
+    headers: getHeaders(),
     body: JSON.stringify(body)
   });
 
@@ -53,6 +55,37 @@ export async function createWxccTaskFromRcs(roomId, messageText) {
 
   if (response.status !== 201) {
     throw new Error(`Create Task échoué : ${response.status} ${JSON.stringify(data)}`);
+  }
+
+  return data;
+}
+
+export async function appendMessageToWxccTask(taskId, messageText) {
+  const body = {
+    mediaType: 'customMessaging',
+    channelParams: {
+      type: 'text',
+      message: {
+        aliasId: randomUUID(),
+        text: messageText || '(message vide)',
+        timestamp: Date.now()
+      }
+    }
+  };
+
+  console.log(`Append message to task ${taskId} :`, JSON.stringify(body));
+
+  const response = await fetchWithProxy(`https://api.wxcc-eu2.cisco.com/v2/tasks/${taskId}/messages`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify(body)
+  });
+
+  const data = await response.json();
+  console.log('Réponse Append Message :', response.status, JSON.stringify(data));
+
+  if (response.status !== 200 && response.status !== 201) {
+    throw new Error(`Append Message échoué : ${response.status} ${JSON.stringify(data)}`);
   }
 
   return data;
