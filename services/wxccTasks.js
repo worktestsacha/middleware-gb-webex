@@ -84,8 +84,8 @@ export async function appendMessageToWxccTask(taskId, messageText) {
   const data = await response.json();
   console.log('Réponse Append Message :', response.status, JSON.stringify(data));
 
-  if (response.status !== 200 && response.status !== 201) {
-    throw new Error(`Append Message échoué : ${response.status} ${JSON.stringify(data)}`);
+if (response.status !== 200 && response.status !== 201 && response.status !== 202) {
+        throw new Error(`Append Message échoué : ${response.status} ${JSON.stringify(data)}`);
   }
 
   return data;
