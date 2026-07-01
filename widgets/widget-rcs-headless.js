@@ -1,33 +1,39 @@
 class RcsHeadlessWidget extends HTMLElement {
-  connectedCallback() {
-    console.log('[RCS Headless] Widget chargé et connecté');
+  constructor() {
+    super();
+    console.log('[RCS Headless] Constructor appelé');
+    this._init();
+  }
 
-    // Log tous les événements custom qui passent sur window
+  async _init() {
+    console.log('[RCS Headless] Init');
+
+    // Écoute tous les événements custom sur window
     const originalDispatch = window.dispatchEvent.bind(window);
-    window.dispatchEvent = (event) => {
-      if (event.type && !event.type.startsWith('mouse') && !event.type.startsWith('pointer')) {
-        console.log('[RCS Headless] Événement window :', event.type, event.detail || '');
+    window.dispatchEvent = function(event) {
+      if (event.type && !['mousemove','pointermove','scroll'].includes(event.type)) {
+        console.log('[RCS Headless] window event :', event.type, event.detail || '');
       }
       return originalDispatch(event);
     };
 
-    // Écoute également les événements sur document
-    document.addEventListener('*', (e) => {
-      console.log('[RCS Headless] Événement document :', e.type);
-    });
-
-    // Tente d'accéder au SDK via différentes méthodes connues
-    console.log('[RCS Headless] window.Desktop :', !!window.Desktop);
-    console.log('[RCS Headless] window.AgentX :', !!window.AgentX);
-    console.log('[RCS Headless] window.wxcc :', !!window.wxcc);
-
     // Écoute les événements AgentX connus
-    ['agentx-action', 'agentx-store-change', 'TASK_ACCEPTED', 'TASK_CONNECTED', 
-     'AgentContactAssigned', 'task-accepted', 'interaction-accepted'].forEach(eventName => {
-      window.addEventListener(eventName, (e) => {
-        console.log(`[RCS Headless] Événement "${eventName}" reçu :`, e.detail || e);
+    [
+      'agentx-action',
+      'AgentContactAssigned', 
+      'task-accepted',
+      'TASK_ACCEPTED',
+      'interaction-accepted',
+      'agentx-store-change'
+    ].forEach(name => {
+      window.addEventListener(name, (e) => {
+        console.log(`[RCS Headless] "${name}" :`, e.detail || e.data || '');
       });
     });
+
+    console.log('[RCS Headless] Listeners enregistrés');
+    console.log('[RCS Headless] window.Desktop :', typeof window.Desktop);
+    console.log('[RCS Headless] window.AgentX :', typeof window.AgentX);
   }
 }
 
