@@ -1,10 +1,9 @@
 import { Router } from 'express';
 import { loginB } from '../services/authB.js';
 import { pauseAgentB } from '../services/pauseB.js';
-import { agentsMap } from '../config/agents.js';
 import { trackRcsEvent } from '../services/rcsQueue.js';
 import { createWxccTaskFromRcs, appendMessageToWxccTask, extractRoomIdFromOrigin } from '../services/wxccTasks.js';
-import { linkTaskToRoom, getTaskForRoom } from '../services/taskRoomMap.js';
+import { linkTaskToRoom, getTaskForRoom, unlinkTask } from '../services/taskRoomMap.js';
 
 export const webhookRouter = Router();
 
@@ -20,9 +19,7 @@ webhookRouter.post('/agent-login', async (req, res) => {
   }
 
   const agentId = data?.agentId;
-  if (!agentId) {
-    return res.status(400).json({ error: 'agentId manquant' });
-  }
+  if (!agentId) return res.status(400).json({ error: 'agentId manquant' });
 
   res.json({ received: true });
 
@@ -45,9 +42,7 @@ webhookRouter.post('/agent-state', async (req, res) => {
   }
 
   const { agentId, currentState, idleCodeId } = data;
-  if (!agentId) {
-    return res.status(400).json({ error: 'agentId manquant' });
-  }
+  if (!agentId) return res.status(400).json({ error: 'agentId manquant' });
 
   res.json({ received: true });
 
@@ -89,7 +84,13 @@ webhookRouter.post('/discussion-event', async (req, res) => {
       try {
         if (existingTaskId) {
           console.log(`Tâche existante pour room ${data.room_id} : ${existingTaskId} → append message`);
-          await appendMessageToWxccTask(existingTaskId, messageText);
+          try {
+            await appendMessageToWxccTask(existingTaskId, messageText);
+          } catch (appendErr) {
+            console.log(`Append échoué (tâche expirée), suppression du lien et création nouvelle tâche`);
+            unlinkTask(existingTaskId);
+            await createWxccTaskFromRcs(data.room_id, messageText);
+          }
         } else {
           console.log(`Pas de tâche pour room ${data.room_id} → Create Task`);
           await createWxccTaskFromRcs(data.room_id, messageText);
@@ -115,4 +116,10 @@ webhookRouter.post('/wxcc-tasks', async (req, res) => {
       linkTaskToRoom(data.taskId, roomId);
     }
   }
+});
+
+webhookRouter.post('/wxcc-outbound', async (req, res) => {
+  console.log('======= WXCC OUTBOUND REÇU =======');
+  console.log(JSON.stringify(req.body, null, 2));
+  res.json({ received: true });
 });

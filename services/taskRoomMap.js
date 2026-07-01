@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { linkTaskToRoom, getTaskForRoom, unlinkTask } from '../services/taskRoomMap.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const STORE_FILE = path.join(__dirname, 'taskRoomMap.json');
