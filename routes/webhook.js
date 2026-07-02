@@ -4,6 +4,7 @@ import { pauseAgentB } from '../services/pauseB.js';
 import { trackRcsEvent } from '../services/rcsQueue.js';
 import { createWxccTaskFromRcs, appendMessageToWxccTask, endWxccTask, extractRoomIdFromOrigin } from '../services/wxccTasks.js';
 import { linkTaskToRoom, getTaskForRoom, unlinkTask } from '../services/taskRoomMap.js';
+import { sendMessageToGreenBureau } from '../services/greenBureauSend.js';
 
 export const webhookRouter = Router();
 
@@ -135,5 +136,31 @@ webhookRouter.post('/wxcc-tasks', async (req, res) => {
 webhookRouter.post('/wxcc-outbound', async (req, res) => {
   console.log('======= WXCC OUTBOUND REÇU =======');
   console.log(JSON.stringify(req.body, null, 2));
+
   res.json({ received: true });
+
+  const { messageDirection, senderType, channelParams, origin, taskId } = req.body?.data || {};
+
+  // On ne traite que les messages sortants envoyés par l'agent (pas les messages système/flow)
+  if (messageDirection !== 'OUTBOUND' || senderType !== 'agent') return;
+
+  const messageText = channelParams?.message?.text;
+  if (!messageText) return;
+
+  // Extraire le room_id depuis l'origin (rcs-client-{room_id}@greenbureau.fr)
+  const roomId = extractRoomIdFromOrigin(origin);
+  if (!roomId) {
+    console.log('Pas de room_id GreenBureau dans origin, message ignoré');
+    return;
+  }
+
+  // Récupère l'agentId depuis taskRoomMap ou depuis req.body
+  const agentId = req.body?.data?.agentId;
+
+  try {
+    await sendMessageToGreenBureau(roomId, agentId, messageText);
+    console.log(`Message agent transmis à GreenBureau pour room ${roomId}`);
+  } catch (err) {
+    console.error('Erreur envoi message GreenBureau :', err.message);
+  }
 });
