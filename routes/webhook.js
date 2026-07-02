@@ -139,23 +139,20 @@ webhookRouter.post('/wxcc-outbound', async (req, res) => {
 
   res.json({ received: true });
 
-  const { messageDirection, senderType, channelParams, origin, taskId } = req.body?.data || {};
+  const data = req.body?.data;
 
-  // On ne traite que les messages sortants envoyés par l'agent (pas les messages système/flow)
-  if (messageDirection !== 'OUTBOUND' || senderType !== 'agent') return;
+  if (data?.messageDirection !== 'OUTBOUND' || data?.senderType !== 'agent') return;
 
-  const messageText = channelParams?.message?.text;
+  const messageText = data?.channelParams?.message?.text;
   if (!messageText) return;
 
-  // Extraire le room_id depuis l'origin (rcs-client-{room_id}@greenbureau.fr)
-  const roomId = extractRoomIdFromOrigin(origin);
+  const roomId = extractRoomIdFromOrigin(data.origin);
   if (!roomId) {
     console.log('Pas de room_id GreenBureau dans origin, message ignoré');
     return;
   }
 
-  // Récupère l'agentId depuis taskRoomMap ou depuis req.body
-  const agentId = req.body?.data?.agentId;
+  const agentId = data.senderId;
 
   try {
     await sendMessageToGreenBureau(roomId, agentId, messageText);
