@@ -8,6 +8,7 @@ import { sendMessageToGreenBureau } from '../services/greenBureauSend.js';
 
 export const webhookRouter = Router();
 
+
 const seenEventIds = new Set();
 
 webhookRouter.post('/agent-login', async (req, res) => {
@@ -160,11 +161,8 @@ webhookRouter.post('/wxcc-outbound', async (req, res) => {
     return;
   }
 
-  const agentId = data.senderId;
-  console.log('[DEBUG] agentId:', agentId);
-
   try {
-    await sendMessageToGreenBureau(roomId, agentId, messageText);
+    await sendMessageToGreenBureau(roomId, messageText);
     console.log(`Message agent transmis à GreenBureau pour room ${roomId}`);
   } catch (err) {
     console.error('Erreur envoi message GreenBureau :', err.message);

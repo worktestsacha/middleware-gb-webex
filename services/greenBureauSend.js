@@ -1,5 +1,4 @@
 import { ProxyAgent, fetch as undiciFetch } from 'undici';
-import { getTokenB } from './authB.js';
 
 function fetchWithProxy(url, options) {
   if (process.env.HTTPS_PROXY) {
@@ -10,13 +9,13 @@ function fetchWithProxy(url, options) {
 }
 
 // Récupère le vrai id de session à partir du session_group_id
-async function getSessionId(sessionGroupId, tokenB) {
+async function getSessionId(sessionGroupId) {
   const res = await fetchWithProxy(
     `https://guests.greenbureau.com/session-groups/${sessionGroupId}/guests/sessions`,
     {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${tokenB}`,
+        'Authorization': `Apikey ${process.env.APIKEY_ADMIN_B}`,
         'Content-Type': 'application/json'
       }
     }
@@ -27,7 +26,6 @@ async function getSessionId(sessionGroupId, tokenB) {
   }
 
   const data = await res.json();
-  // Retourne la session active (state: waiting, running, late)
   const activeStates = ['waiting', 'running', 'late'];
   const sessions = Array.isArray(data) ? data : [data];
   const active = sessions.find(s => activeStates.includes(s.state));
@@ -40,16 +38,8 @@ async function getSessionId(sessionGroupId, tokenB) {
   return { sessionId: active.id, skillId: active.skill_id };
 }
 
-export async function sendMessageToGreenBureau(sessionGroupId, agentId, messageText) {
-  // Récupère le token agent
-  const tokenB = getTokenB(agentId);
-  console.log('[DEBUG] tokenB pour agentId', agentId, ':', tokenB ? 'oui' : 'NON');
-  if (!tokenB) {
-    throw new Error(`Pas de token GreenBureau pour l'agent ${agentId}`);
-  }
-
-  // Récupère le vrai id de session
-  const { sessionId, skillId } = await getSessionId(sessionGroupId, tokenB);
+export async function sendMessageToGreenBureau(sessionGroupId, messageText) {  // Récupère le vrai id de session
+  const { sessionId, skillId } = await getSessionId(sessionGroupId);
 
   const body = {
     date: new Date().toISOString(),
@@ -64,7 +54,7 @@ export async function sendMessageToGreenBureau(sessionGroupId, agentId, messageT
     {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${tokenB}`,
+        'Authorization': `Apikey ${process.env.APIKEY_ADMIN_B}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(body)
