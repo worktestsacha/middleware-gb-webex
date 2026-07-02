@@ -1,9 +1,10 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { linkTaskToRoom, getTaskForRoom, unlinkTask } from '../services/taskRoomMap.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const STORE_FILE = path.join(__dirname, 'taskRoomMap.json');
+
 function loadFromDisk() {
   try {
     const raw = fs.readFileSync(STORE_FILE, 'utf-8');
@@ -19,9 +20,7 @@ function saveToDisk(map) {
 
 const taskToRoom = loadFromDisk();
 
-// Map inverse : roomId -> taskId
 const roomToTask = new Map();
-// Reconstruction de la map inverse au démarrage
 for (const [taskId, roomId] of taskToRoom.entries()) {
   roomToTask.set(roomId, taskId);
 }
