@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { loginB } from '../services/authB.js';
 import { pauseAgentB } from '../services/pauseB.js';
 import { trackRcsEvent } from '../services/rcsQueue.js';
-import { createWxccTaskFromRcs, appendMessageToWxccTask, extractRoomIdFromOrigin } from '../services/wxccTasks.js';
+import { createWxccTaskFromRcs, appendMessageToWxccTask, endWxccTask, extractRoomIdFromOrigin } from '../services/wxccTasks.js';
 import { linkTaskToRoom, getTaskForRoom, unlinkTask } from '../services/taskRoomMap.js';
 
 export const webhookRouter = Router();
@@ -97,6 +97,20 @@ webhookRouter.post('/discussion-event', async (req, res) => {
         }
       } catch (err) {
         console.error('Erreur envoi message WxCC :', err.message);
+      }
+    }
+
+    if (data.kind === 'session_closed') {
+      const existingTaskId = getTaskForRoom(data.room_id);
+      if (existingTaskId) {
+        console.log(`Session GreenBureau fermée, clôture tâche Webex CC : ${existingTaskId}`);
+        try {
+          await endWxccTask(existingTaskId);
+          unlinkTask(existingTaskId);
+          console.log(`Tâche ${existingTaskId} clôturée et lien supprimé`);
+        } catch (err) {
+          console.error('Erreur clôture tâche WxCC :', err.message);
+        }
       }
     }
   }

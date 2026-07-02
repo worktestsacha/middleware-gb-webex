@@ -4,8 +4,6 @@ import { fileURLToPath } from 'url';
 import { linkTaskToRoom, getTaskForRoom, unlinkTask } from '../services/taskRoomMap.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const STORE_FILE = path.join(__dirname, 'taskRoomMap.json');
-
 function loadFromDisk() {
   try {
     const raw = fs.readFileSync(STORE_FILE, 'utf-8');

@@ -95,3 +95,20 @@ export function extractRoomIdFromOrigin(origin) {
   const match = origin?.match(/^rcs-client-(.+)@greenbureau\.fr$/);
   return match ? match[1] : null;
 }
+
+export async function endWxccTask(taskId) {
+  const response = await fetchWithProxy(`https://api.wxcc-eu2.cisco.com/v1/tasks/${taskId}/end`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({})
+  });
+
+  console.log('Réponse End Task :', response.status);
+
+  if (response.status !== 202) {
+    const data = await response.json();
+    throw new Error(`End Task échoué : ${response.status} ${JSON.stringify(data)}`);
+  }
+
+  return true;
+}
