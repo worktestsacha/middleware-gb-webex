@@ -43,6 +43,7 @@ async function getSessionId(sessionGroupId, tokenB) {
 export async function sendMessageToGreenBureau(sessionGroupId, agentId, messageText) {
   // Récupère le token agent
   const tokenB = getTokenB(agentId);
+  console.log('[DEBUG] tokenB pour agentId', agentId, ':', tokenB ? 'oui' : 'NON');
   if (!tokenB) {
     throw new Error(`Pas de token GreenBureau pour l'agent ${agentId}`);
   }

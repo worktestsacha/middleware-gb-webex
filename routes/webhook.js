@@ -141,18 +141,27 @@ webhookRouter.post('/wxcc-outbound', async (req, res) => {
 
   const data = req.body?.data;
 
-  if (data?.messageDirection !== 'OUTBOUND' || data?.senderType !== 'agent') return;
+  console.log('[DEBUG] messageDirection:', data?.messageDirection);
+  console.log('[DEBUG] senderType:', data?.senderType);
+
+  if (data?.messageDirection !== 'OUTBOUND' || data?.senderType !== 'agent') {
+    console.log('[DEBUG] Filtré');
+    return;
+  }
 
   const messageText = data?.channelParams?.message?.text;
+  console.log('[DEBUG] messageText:', messageText);
   if (!messageText) return;
 
   const roomId = extractRoomIdFromOrigin(data.origin);
+  console.log('[DEBUG] roomId:', roomId);
   if (!roomId) {
     console.log('Pas de room_id GreenBureau dans origin, message ignoré');
     return;
   }
 
   const agentId = data.senderId;
+  console.log('[DEBUG] agentId:', agentId);
 
   try {
     await sendMessageToGreenBureau(roomId, agentId, messageText);
